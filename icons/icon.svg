@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="112" fill="#1f2a37"/>
+  <g stroke="#e8e6e3" stroke-linecap="round">
+    <line x1="96" y1="150" x2="416" y2="150" stroke-width="6"/>
+    <line x1="96" y1="194" x2="416" y2="194" stroke-width="7"/>
+    <line x1="96" y1="238" x2="416" y2="238" stroke-width="8"/>
+    <line x1="96" y1="282" x2="416" y2="282" stroke-width="9"/>
+    <line x1="96" y1="326" x2="416" y2="326" stroke-width="10"/>
+    <line x1="96" y1="370" x2="416" y2="370" stroke-width="11"/>
+  </g>
+  <circle cx="200" cy="194" r="28" fill="#f08a4b"/>
+  <circle cx="290" cy="282" r="28" fill="#4fd18a"/>
+  <circle cx="350" cy="370" r="28" fill="#6ea2ff"/>
+  <text x="256" y="112" font-family="Arial, sans-serif" font-size="56" font-weight="800" fill="#f08a4b" text-anchor="middle">TAB</text>
+</svg>

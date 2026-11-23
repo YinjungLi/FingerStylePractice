@@ -1,0 +1,266 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>指彈練習室</title>
+  <meta name="description" content="輸入歌名，自動產生指彈吉他六線譜、指法說明與難度，並可慢速播放、搭配節拍器練習。">
+  <meta name="theme-color" content="#1f2a37">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="指彈練習室">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="#/">
+      <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="currentColor" d="M19.6 2.6a1.5 1.5 0 0 1 2 2l-5.2 5.2.3.3a1 1 0 0 1 0 1.4l-.7.7a1 1 0 0 1-1.4 0l-.3-.3-1.1 1.1c.9 1.9.6 4-.8 5.4-2 2-5.7 1.8-8.1-.6s-2.6-6.1-.6-8.1c1.4-1.4 3.5-1.7 5.4-.8l1.1-1.1-.3-.3a1 1 0 0 1 0-1.4l.7-.7a1 1 0 0 1 1.4 0l.3.3zM7.5 13a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3z"/></svg>
+      <span>指彈練習室</span>
+    </a>
+    <div class="topbar-actions">
+      <button class="icon-btn" id="btn-metro" aria-label="節拍器" title="節拍器">
+        <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" d="M9 3h6l4 18H5L9 3zM7 15h10M12 15l5-9"/></svg>
+        <span class="metro-dot" id="metro-dot"></span>
+      </button>
+      <button class="icon-btn" id="btn-settings" aria-label="設定" title="設定">
+        <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" d="M19.4 13a7.6 7.6 0 0 0 0-2l2-1.6-2-3.4-2.4 1a7.5 7.5 0 0 0-1.7-1L15 3.5h-4l-.4 2.5a7.5 7.5 0 0 0-1.7 1l-2.4-1-2 3.4 2 1.6a7.6 7.6 0 0 0 0 2l-2 1.6 2 3.4 2.4-1c.5.4 1.1.7 1.7 1l.4 2.5h4l.4-2.5c.6-.3 1.2-.6 1.7-1l2.4 1 2-3.4-2-1.6z"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <div class="metro-panel" id="metro-panel" hidden>
+    <div class="metro-head">
+      <strong>節拍器</strong>
+      <label class="switch"><input type="checkbox" id="metro-on"><span></span></label>
+    </div>
+    <div class="metro-bpm">
+      <button class="round-btn" id="metro-minus" aria-label="減慢">−</button>
+      <div><span id="metro-bpm">80</span><small>BPM</small></div>
+      <button class="round-btn" id="metro-plus" aria-label="加快">+</button>
+    </div>
+    <input type="range" id="metro-range" min="30" max="220" value="80" aria-label="節拍器速度">
+    <div class="metro-row" id="metro-free-row">
+      <label>每小節
+        <select id="metro-beats"><option>2</option><option>3</option><option selected>4</option><option>6</option></select>
+        拍</label>
+      <button class="chip" id="metro-tap">點我測速</button>
+    </div>
+    <p class="hint" id="metro-sync-hint" hidden>播放歌曲時，節拍器會跟著歌曲速度走（用下方速度滑桿調整）。</p>
+    <label class="metro-vol">音量 <input type="range" id="metro-vol" min="0" max="1" step="0.05" value="0.6"></label>
+    <div class="metro-beats-vis" id="metro-vis"></div>
+  </div>
+
+  <main id="app">
+    <!-- 首頁 -->
+    <section id="view-home">
+      <div class="card hero">
+        <h1>想練哪首歌？</h1>
+        <p class="sub">輸入歌名，自動編成指彈吉他譜，附上指法與難度，還能慢速播放跟著練。</p>
+        <form id="search-form" class="search" autocomplete="off">
+          <input id="q" type="search" placeholder="例如：小星星、Amazing Grace、卡農…" enterkeyhint="go" aria-label="歌名">
+          <button type="submit" class="btn primary">產生指彈譜</button>
+        </form>
+        <div id="search-status" class="status" role="status" aria-live="polite"></div>
+        <div class="lib">
+          <span class="lib-label">內建曲庫：</span>
+          <div id="lib-chips" class="chips"></div>
+        </div>
+      </div>
+
+      <div class="section-head">
+        <h2>我的歌曲</h2>
+        <div class="row-actions">
+          <button class="btn ghost small" id="btn-manual">＋ 手動輸入和弦</button>
+          <button class="btn ghost small" id="btn-export">匯出</button>
+          <label class="btn ghost small file-btn">匯入<input type="file" id="file-import" accept="application/json,.json" hidden></label>
+        </div>
+      </div>
+      <div id="my-songs" class="song-list"></div>
+    </section>
+
+    <!-- 歌曲練習頁 -->
+    <section id="view-song" hidden>
+      <div class="song-head">
+        <a class="btn ghost small" href="#/">← 我的歌曲</a>
+        <div class="row-actions">
+          <button class="btn ghost small" id="btn-edit">編輯和弦</button>
+          <button class="btn ghost small danger" id="btn-delete">刪除</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="title-row">
+          <div>
+            <h1 id="song-title"></h1>
+            <div class="meta" id="song-meta"></div>
+          </div>
+          <div class="diff-badge" id="diff-badge"></div>
+        </div>
+        <p class="song-note" id="song-note" hidden></p>
+        <div class="options">
+          <div class="opt">
+            <span class="opt-label">編曲難度</span>
+            <div class="seg" id="level-seg" role="radiogroup" aria-label="編曲難度"></div>
+          </div>
+          <div class="opt">
+            <span class="opt-label">移調夾</span>
+            <select id="capo-sel" aria-label="移調夾"></select>
+          </div>
+          <div class="opt">
+            <span class="opt-label">譜上顯示指法</span>
+            <label class="switch"><input type="checkbox" id="show-fingers" checked><span></span></label>
+          </div>
+        </div>
+        <p class="capo-hint" id="capo-hint"></p>
+      </div>
+
+      <details class="card" id="diff-card">
+        <summary><strong>難度分析與練習建議</strong> <span id="diff-summary"></span></summary>
+        <div class="diff-body">
+          <ul id="diff-reasons"></ul>
+          <h3>練習建議</h3>
+          <ol id="diff-tips"></ol>
+        </div>
+      </details>
+
+      <div class="card fb-card">
+        <div class="fb-top">
+          <strong>指板模擬</strong>
+          <span class="pos" id="pos-label">第 1 小節</span>
+        </div>
+        <div id="fretboard" class="fretboard"></div>
+        <div class="legend">
+          <span>右手：</span>
+          <span class="lg rf-p">p 拇指</span><span class="lg rf-i">i 食指</span><span class="lg rf-m">m 中指</span><span class="lg rf-a">a 無名指</span>
+          <span class="lg-sep">左手數字：1 食指 2 中指 3 無名指 4 小指</span>
+        </div>
+        <div class="countin" id="countin" hidden></div>
+      </div>
+
+      <div class="card">
+        <div class="fb-top">
+          <strong>六線譜</strong>
+          <span class="hint">點小節可以從那裡開始播放</span>
+        </div>
+        <div id="tab" class="tab"></div>
+      </div>
+
+      <div class="card">
+        <h2>怎麼按？</h2>
+        <div id="chord-grid" class="chord-grid"></div>
+        <details class="bar-notes">
+          <summary>逐小節說明</summary>
+          <ol id="bar-notes"></ol>
+        </details>
+        <div class="rh-guide">
+          <h3>右手分工</h3>
+          <p><b class="rf-p-t">p 拇指</b>負責第 4、5、6 弦的低音；<b class="rf-i-t">i 食指</b>負責第 3 弦；<b class="rf-m-t">m 中指</b>負責第 2 弦；<b class="rf-a-t">a 無名指</b>負責第 1 弦。
+          譜下方的字母就是每個時間點要用的右手手指，譜上數字右下角的小數字是左手手指。</p>
+        </div>
+      </div>
+      <div class="bottom-spacer"></div>
+    </section>
+  </main>
+
+  <!-- 播放控制列 -->
+  <div class="controls" id="controls" hidden>
+    <div class="ctl-row">
+      <button class="round-btn" id="btn-rewind" aria-label="回到開頭" title="回到開頭">
+        <svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M6 5h2v14H6zM20 5v14L9 12z"/></svg>
+      </button>
+      <button class="play-btn" id="btn-play" aria-label="播放">
+        <svg class="i-play" viewBox="0 0 24 24" width="28" height="28"><path fill="currentColor" d="M8 5v14l11-7z"/></svg>
+        <svg class="i-pause" viewBox="0 0 24 24" width="28" height="28"><path fill="currentColor" d="M6 5h4v14H6zM14 5h4v14h-4z"/></svg>
+      </button>
+      <button class="toggle" id="tg-metro" aria-pressed="false" title="節拍器">節拍器</button>
+      <button class="toggle" id="tg-countin" aria-pressed="true" title="播放前先數一小節">預備拍</button>
+      <button class="toggle" id="tg-loop" aria-pressed="false" title="重複播放">循環</button>
+    </div>
+    <div class="ctl-row tempo-row">
+      <button class="round-btn small" id="tempo-minus" aria-label="減速">−</button>
+      <input type="range" id="tempo" min="30" max="120" step="5" value="60" aria-label="播放速度">
+      <button class="round-btn small" id="tempo-plus" aria-label="加速">+</button>
+      <span class="tempo-label" id="tempo-label">60%</span>
+    </div>
+    <div class="ctl-row loop-row" id="loop-row" hidden>
+      <label>從第 <select id="loop-from"></select> 小節</label>
+      <label>到第 <select id="loop-to"></select> 小節</label>
+      <label class="trainer"><input type="checkbox" id="trainer"> 每輪自動加速 5%</label>
+    </div>
+  </div>
+
+  <!-- 設定 -->
+  <dialog id="dlg-settings">
+    <form method="dialog" class="dlg">
+      <h2>設定</h2>
+      <label class="field">
+        <span>Claude API 金鑰（選填）</span>
+        <input type="password" id="set-key" placeholder="sk-ant-..." autocomplete="off">
+        <small>內建曲庫以外的歌曲，會請 Claude 找出歌曲的和弦進行，再由本機自動編成指彈譜。金鑰只存在這台裝置的瀏覽器裡，請勿在公用電腦上儲存。可到 console.anthropic.com 申請。</small>
+      </label>
+      <label class="field">
+        <span>吉他音量</span>
+        <input type="range" id="set-guitar" min="0" max="1.5" step="0.05">
+      </label>
+      <div class="dlg-actions">
+        <button value="cancel" class="btn ghost">取消</button>
+        <button value="ok" class="btn primary" id="set-save">儲存</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- 找不到歌曲 -->
+  <dialog id="dlg-notfound">
+    <form method="dialog" class="dlg">
+      <h2>內建曲庫沒有這首歌</h2>
+      <p id="nf-msg">你可以：</p>
+      <ul class="nf-list">
+        <li><b>設定 Claude API 金鑰</b>：輸入歌名就能自動查和弦、產生指彈譜。</li>
+        <li><b>手動輸入和弦</b>：從和弦網站或歌本把和弦貼進來，一樣會自動編成指彈譜。</li>
+      </ul>
+      <div class="dlg-actions">
+        <button value="cancel" class="btn ghost">取消</button>
+        <button value="key" class="btn ghost">設定金鑰</button>
+        <button value="manual" class="btn primary">手動輸入</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- 手動輸入/編輯 -->
+  <dialog id="dlg-edit" class="wide">
+    <form method="dialog" class="dlg" id="edit-form">
+      <h2 id="edit-title">手動輸入和弦</h2>
+      <div class="grid2">
+        <label class="field"><span>歌名</span><input id="ed-title" required></label>
+        <label class="field"><span>演唱者 / 作曲者</span><input id="ed-artist"></label>
+        <label class="field"><span>原曲速度 (BPM)</span><input id="ed-bpm" type="number" min="30" max="240" value="90"></label>
+        <label class="field"><span>拍號</span>
+          <select id="ed-time"><option value="4">4/4</option><option value="3">3/4</option><option value="2">2/4</option></select></label>
+      </div>
+      <label class="field">
+        <span>和弦（每個小節用 <code>|</code> 分隔，可用 <code>[副歌]</code> 標示段落）</span>
+        <textarea id="ed-chords" rows="7" placeholder="[主歌] C G | Am Em | F C | Dm G |&#10;[副歌] F G | Em Am | Dm G | C |"></textarea>
+        <small>一個小節放兩個和弦會各彈一半；要指定拍數可寫 <code>C:3 G:1</code>。</small>
+      </label>
+      <details>
+        <summary>進階：加入旋律（選填）</summary>
+        <label class="field">
+          <span>旋律音（和小節對齊，用 <code>|</code> 分隔）</span>
+          <textarea id="ed-melody" rows="4" placeholder="C4 C4 G4 G4 | A4 A4 G4:2 |"></textarea>
+          <small>音名+八度，<code>:2</code> 表示兩拍、<code>:0.5</code> 半拍、<code>r</code> 是休止。有旋律時會編成「低音 + 旋律」的獨奏指彈。</small>
+        </label>
+      </details>
+      <p class="error" id="ed-error" role="alert"></p>
+      <div class="dlg-actions">
+        <button value="cancel" class="btn ghost" formnovalidate>取消</button>
+        <button value="ok" class="btn primary" id="ed-save">產生指彈譜</button>
+      </div>
+    </form>
+  </dialog>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>

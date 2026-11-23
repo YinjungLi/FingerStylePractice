@@ -1,0 +1,16 @@
+{
+  "name": "指彈練習室",
+  "short_name": "指彈練習",
+  "description": "輸入歌名，自動產生指彈吉他六線譜、指法與難度，可慢速播放並搭配節拍器練習。",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f4f1ec",
+  "theme_color": "#1f2a37",
+  "lang": "zh-Hant",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml" }
+  ]
+}
