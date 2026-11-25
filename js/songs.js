@@ -240,6 +240,23 @@ export const LIBRARY = [
   },
 ];
 
+// 每小節的歌詞（傳統歌詞 / 公有領域），以 | 分隔，與小節一一對應
+const LYRICS = {
+  'lib-twinkle': '一閃一閃|亮晶晶|滿天都是|小星星|掛在天上|放光明|好像許多|小眼睛|一閃一閃|亮晶晶|滿天都是|小星星',
+  'lib-tigers': '兩隻老虎|兩隻老虎|跑得快|跑得快|一隻沒有耳朵|一隻沒有尾巴|真奇怪|真奇怪',
+  'lib-lightlyrow': '嗡嗡嗡|嗡嗡嗡|大家一起|勤做工|來匆匆|去匆匆|做工興味|濃|天暖花好|不做工|將來哪裡|好過冬|嗡嗡嗡|嗡嗡嗡|別學懶惰|蟲',
+  'lib-birthday': '祝你|生日快|樂 祝你|生日快|樂 祝你|生日快|樂 祝你|生日快|樂',
+  'lib-amazing': 'A-|maz-ing|grace how|sweet the|sound that|saved a|wretch like|me I|once was|lost but|now am|found was|blind but|now I|see',
+  'lib-silentnight': 'Si-lent|night|Ho-ly|night|All is|calm|All is|bright|Round yon|Vir-gin|Mo-ther and|Child|Ho-ly|In-fant so|ten-der and|mild|Sleep in|hea-ven-ly|peace||Sleep in|hea-ven-ly|peace|',
+  'lib-jingle': 'Jin-gle bells|jin-gle bells|jin-gle all the|way|Oh what fun it|is to ride in a|one horse o-pen|sleigh, hey!|Jin-gle bells|jin-gle bells|jin-gle all the|way|Oh what fun it|is to ride in a|one horse o-pen|sleigh',
+  'lib-auldlangsyne': 'Should|auld ac-quain-tance|be for-got and|ne-ver brought to|mind? Should|auld ac-quain-tance|be for-got and|days of auld lang|syne',
+};
+for (const song of LIBRARY) {
+  const ly = LYRICS[song.id];
+  if (!ly) continue;
+  ly.split('|').forEach((l, i) => { if (song.bars[i] && l.trim()) song.bars[i].l = l.trim(); });
+}
+
 export function normalizeTitle(s) {
   return (s || '').toLowerCase().replace(/[\s\-_'’"「」《》()（）.,!！?？]/g, '');
 }

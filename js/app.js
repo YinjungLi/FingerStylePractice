@@ -220,6 +220,12 @@ function showSong(id) {
   if (!song) { location.hash = '#/'; return; }
   if (current && current.song.id !== id) leaveSong();
   song.settings = { ...store.DEFAULT_SONG_SETTINGS, ...(song.settings || {}) };
+  // 舊版加入的內建歌曲沒有歌詞：自動補上
+  const lib = song.libId && LIBRARY.find((x) => x.id === song.libId);
+  if (lib && song.source === 'library' && lib.bars.length === song.bars.length && !song.bars.some((b) => b.l) && lib.bars.some((b) => b.l)) {
+    song.bars.forEach((b, i) => { if (lib.bars[i].l) b.l = lib.bars[i].l; });
+    store.saveSong(song);
+  }
   current = { song, arr: null };
   practice = { last: null, acc: 0, counted: false };
   $('#view-home').hidden = true;
@@ -321,7 +327,7 @@ function rebuild() {
   }
   // 逐小節說明
   $('#bar-notes').innerHTML = arr.barNotes.map((b) =>
-    `<li>${b.sec ? `<b>[${esc(b.sec)}]</b> ` : ''}${esc(b.chords)}${b.notes.map((n) => `<span class="sub">${esc(n)}</span>`).join('')}</li>`).join('');
+    `<li>${b.sec ? `<b>[${esc(b.sec)}]</b> ` : ''}${esc(b.chords)}${b.lyric ? ` <i>♪ ${esc(b.lyric)}</i>` : ''}${b.notes.map((n) => `<span class="sub">${esc(n)}</span>`).join('')}</li>`).join('');
 
   // 循環範圍
   const n = arr.bars.length;
@@ -339,6 +345,7 @@ function rebuild() {
   tabView.setShowFingers(song.settings.showFingers !== false);
   applyLoop();
   updateTempoLabel();
+  lastBannerBar = -1;
   drawPosition(player.pausedBeat);
   syncMetroPanel();
 }
@@ -521,11 +528,35 @@ function drawPosition(beat) {
   const active = arr.events.filter((e) => beat >= e.t - 0.02 && beat < e.t + Math.max(0.2, Math.min(e.d, 0.9)));
   fretboard.showNotes(player.playing ? active : []);
   $('#pos-label').textContent = `第 ${bar + 1} 小節 · 第 ${Math.floor(inBar) + 1} 拍${seg ? ' · ' + seg.chord.name : ''}`;
+  drawNowBanner(bar);
   const ci = $('#countin');
   if (player.playing && beat < player.playFrom) {
     ci.hidden = false;
     ci.textContent = String(Math.max(1, Math.ceil(player.playFrom - beat)));
   } else ci.hidden = true;
+}
+
+let lastBannerBar = -1;
+function drawNowBanner(bar) {
+  if (bar === lastBannerBar && current.bannerFor === current.arr) return;
+  lastBannerBar = bar;
+  current.bannerFor = current.arr;
+  const bars = current.arr.bars;
+  let sec = '';
+  for (let i = bar; i >= 0; i--) if (bars[i].sec) { sec = bars[i].sec; break; }
+  const chordsOf = (b) => b.segments.map((sg) => sg.chord.name).join(' → ') || '（只彈旋律）';
+  $('#now-sec').textContent = sec ? `【${sec}】 第 ${bar + 1} / ${bars.length} 小節` : `第 ${bar + 1} / ${bars.length} 小節`;
+  if (current.arr.hasLyrics) {
+    let cur = bars[bar].lyric;
+    if (!cur) for (let i = bar - 1; i >= Math.max(0, bar - 2); i--) if (bars[i].lyric) { cur = bars[i].lyric + '～'; break; }
+    let next = '';
+    for (let i = bar + 1; i < Math.min(bars.length, bar + 5); i++) if (bars[i].lyric) { next = bars[i].lyric; break; }
+    $('#now-main').textContent = cur ? `♪ ${cur}` : '（前奏／間奏）';
+    $('#now-next').textContent = next ? `下一句：${next}` : '';
+  } else {
+    $('#now-main').textContent = chordsOf(bars[bar]);
+    $('#now-next').textContent = bar + 1 < bars.length ? `下一小節：${chordsOf(bars[bar + 1])}` : '最後一小節';
+  }
 }
 
 let lastMetroBeat = -1;
@@ -667,6 +698,14 @@ function melodyToText(song) {
   return lines.join('\n');
 }
 
+function lyricsToText(song) {
+  if (!song.bars.some((b) => b.l)) return '';
+  const cells = song.bars.map((b) => b.l || '');
+  const lines = [];
+  for (let i = 0; i < cells.length; i += 4) lines.push(cells.slice(i, i + 4).join(' | ') + ' |');
+  return lines.join('\n');
+}
+
 function parseEditor() {
   const errors = [];
   const title = $('#ed-title').value.trim();
@@ -712,6 +751,14 @@ function parseEditor() {
       else bars.push({ c: '', m: cell });
     });
   }
+  const ly = $('#ed-lyrics').value;
+  if (ly.trim()) {
+    // 每個 | 是一個小節；換行只是排版
+    const cells = ly.replace(/\n/g, ' ').split('|').map((c) => c.trim());
+    if (cells.length && cells[cells.length - 1] === '') cells.pop();
+    cells.forEach((cell, i) => { if (i < bars.length && cell) bars[i].l = cell; });
+    if (cells.length > bars.length) errors.push(`歌詞有 ${cells.length} 個小節，比和弦（${bars.length} 小節）多`);
+  }
   return {
     errors: [...new Set(errors)].slice(0, 6),
     data: { title, artist: $('#ed-artist').value.trim(), bpm: Math.max(30, Math.min(240, +$('#ed-bpm').value || 90)), timeSig: [beats, 4], bars },
@@ -726,6 +773,7 @@ function openEditor(song, title) {
   $('#ed-time').value = song ? String((song.timeSig || [4])[0]) : '4';
   $('#ed-chords').value = song ? barsToText(song) : '';
   $('#ed-melody').value = song ? melodyToText(song) : '';
+  $('#ed-lyrics').value = song ? lyricsToText(song) : '';
   $('#ed-error').textContent = '';
   const dlg = $('#dlg-edit');
   dlg.returnValue = '';

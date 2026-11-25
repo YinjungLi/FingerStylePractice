@@ -165,6 +165,11 @@
 
   <!-- 播放控制列 -->
   <div class="controls" id="controls" hidden>
+    <div class="now" id="now">
+      <div class="now-sec" id="now-sec"></div>
+      <div class="now-main" id="now-main"></div>
+      <div class="now-next" id="now-next"></div>
+    </div>
     <div class="ctl-row">
       <button class="round-btn" id="btn-rewind" aria-label="回到開頭" title="回到開頭">
         <svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M6 5h2v14H6zM20 5v14L9 12z"/></svg>
@@ -242,6 +247,11 @@
         <span>和弦（每個小節用 <code>|</code> 分隔，可用 <code>[副歌]</code> 標示段落）</span>
         <textarea id="ed-chords" rows="7" placeholder="[主歌] C G | Am Em | F C | Dm G |&#10;[副歌] F G | Em Am | Dm G | C |"></textarea>
         <small>一個小節放兩個和弦會各彈一半；要指定拍數可寫 <code>C:3 G:1</code>。</small>
+      </label>
+      <label class="field">
+        <span>歌詞（選填，和和弦一樣用 <code>|</code> 對齊小節）</span>
+        <textarea id="ed-lyrics" rows="4" placeholder="第一小節的歌詞 | 第二小節的歌詞 | | 第四小節 |"></textarea>
+        <small>歌詞會顯示在六線譜下方，播放時也會大字顯示現在唱到哪一句。不唱的小節留空即可（兩個 <code>|</code> 中間不填）。</small>
       </label>
       <details>
         <summary>進階：加入旋律（選填）</summary>

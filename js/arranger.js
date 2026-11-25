@@ -64,9 +64,10 @@ export function parseSong(song) {
     segments: parseChordTokens(b.c, beatsPerBar),
     melody: parseMelody(b.m),
     sec: b.sec || '',
+    lyric: (b.l || '').trim(),
     chordText: b.c || '',
   }));
-  return { beatsPerBar, bars, hasMelody: bars.some((b) => b.melody.length) };
+  return { beatsPerBar, bars, hasMelody: bars.some((b) => b.melody.length), hasLyrics: bars.some((b) => b.lyric) };
 }
 
 // ---------- 移調夾與八度 ----------
@@ -370,7 +371,7 @@ export function arrange(song, opts = {}) {
 
     // 小節說明
     const chordDesc = bar.segments.map((sg) => sg.chord.name).join(' → ');
-    barNotes.push({ bar: bi, chords: chordDesc || '(弱起，只彈旋律)', notes, sec: bar.sec });
+    barNotes.push({ bar: bi, chords: chordDesc || '(弱起，只彈旋律)', notes, sec: bar.sec, lyric: bar.lyric });
   });
 
   // 3) 計算延音長度：同一條弦再次被彈、或和弦更換時停止
@@ -392,7 +393,7 @@ export function arrange(song, opts = {}) {
 
   const totalBeats = bars.length * beatsPerBar;
   const result = {
-    capo, octave, level, beatsPerBar, bars, events, totalBeats, barNotes, hasMelody: parsed.hasMelody,
+    capo, octave, level, beatsPerBar, bars, events, totalBeats, barNotes, hasMelody: parsed.hasMelody, hasLyrics: parsed.hasLyrics,
     chordList: [...shapes.values()].map((x) => ({ ...x, desc: describeShape(x.shape) })),
   };
   result.difficulty = rateDifficulty(result, song.bpm || 90);

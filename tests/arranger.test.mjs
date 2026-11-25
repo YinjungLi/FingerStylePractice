@@ -93,3 +93,12 @@ test('library search', () => {
   assert.equal(findInLibrary('canon in d').id, 'lib-canon');
   assert.equal(findInLibrary('不存在的歌xyz'), null);
 });
+
+test('lyrics pass through to arrangement', () => {
+  const tw = LIBRARY.find((s) => s.id === 'lib-twinkle');
+  const arr = arrange(tw, {});
+  assert.ok(arr.hasLyrics);
+  assert.equal(arr.bars[0].lyric, '一閃一閃');
+  const noLy = arrange(LIBRARY.find((s) => s.id === 'lib-canon'), {});
+  assert.equal(noLy.hasLyrics, false);
+});

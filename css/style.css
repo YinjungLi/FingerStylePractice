@@ -177,6 +177,11 @@ details.card[open] > summary::after { content: "▴"; }
 .fb-top { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; margin-bottom: 6px; flex-wrap: wrap; }
 .pos { font-variant-numeric: tabular-nums; color: var(--muted); font-size: .9rem; }
 .fretboard svg { width: 100%; height: auto; display: block; }
+.now { max-width: 980px; margin: 0 auto 8px; text-align: center; border-bottom: 1px solid var(--line); padding-bottom: 6px; }
+.now-sec { font-size: .75rem; font-weight: 700; color: var(--accent); }
+.now-main { font-size: 1.25rem; font-weight: 800; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.now-next { font-size: .85rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lyric { font-size: 12.5px; fill: var(--ink); font-weight: 600; }
 .fb-wood { fill: var(--wood); }
 .fb-fret { stroke: var(--fret); stroke-width: 2; }
 .fb-nut { stroke: #efe8d8; stroke-width: 5; }
@@ -249,7 +254,7 @@ details.card[open] > summary::after { content: "▴"; }
 .bar-notes .sub { color: var(--muted); display: block; }
 .rh-guide p { font-size: .9rem; margin: 6px 0 0; }
 .rf-p-t { color: var(--p); } .rf-i-t { color: var(--i); } .rf-m-t { color: var(--m); } .rf-a-t { color: var(--a); }
-.bottom-spacer { height: 170px; }
+.bottom-spacer { height: 250px; }
 
 /* ---------- 播放控制列 ---------- */
 .controls {
@@ -320,11 +325,11 @@ dialog::backdrop { background: rgba(0, 0, 0, .45); }
 .dlg details summary { cursor: pointer; font-weight: 600; margin-bottom: 8px; font-size: .9rem; }
 
 .toast {
-  position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%) translateY(120px);
-  background: var(--ink); color: var(--bg); padding: 10px 16px; border-radius: 10px; z-index: 50; transition: transform .25s; max-width: calc(100vw - 32px);
+  position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%) translateY(20px); opacity: 0; pointer-events: none; transition: transform .25s, opacity .25s;
+  background: var(--ink); color: var(--bg); padding: 10px 16px; border-radius: 10px; z-index: 50; max-width: calc(100vw - 32px);
 }
-.toast.show { transform: translateX(-50%) translateY(0); }
-body.song-mode .toast { bottom: 190px; }
+.toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+body.song-mode .toast { bottom: 250px; }
 
 @media (max-width: 560px) {
   main { padding: 12px; }

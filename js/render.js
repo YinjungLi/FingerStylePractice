@@ -2,7 +2,8 @@
 const SVGNS = 'http://www.w3.org/2000/svg';
 const STRING_GAP = 15;
 const TOP = 40;
-const LINE_H = TOP + STRING_GAP * 5 + 28;
+const BASE_H = TOP + STRING_GAP * 5 + 28;
+const LYRIC_H = 20;
 const LEFT = 26;
 
 function el(tag, attrs = {}, text) {
@@ -32,6 +33,7 @@ export class TabView {
     this.barsPerLine = Math.max(1, Math.min(4, Math.floor((width - LEFT - 6) / (bpb * density))));
     this.barW = (width - LEFT - 6) / this.barsPerLine;
     this.width = width;
+    const LINE_H = BASE_H + (arr.hasLyrics ? LYRIC_H : 0);
     const nLines = Math.ceil(arr.bars.length / this.barsPerLine);
     this.lines = [];
     this.noteEls = new Array(arr.events.length);
@@ -55,6 +57,13 @@ export class TabView {
         svg.appendChild(el('line', { x1: x, x2: x, y1: TOP, y2: TOP + STRING_GAP * 5, class: 'tab-barline' }));
         svg.appendChild(el('text', { x: x + 2, y: TOP - 6, class: 'bar-num' }, String(b + 1)));
         if (bar.sec) svg.appendChild(el('text', { x: x + 2, y: 11, class: 'sec-label' }, bar.sec));
+        if (bar.lyric) {
+          const ly = el('text', { x: x + 8, y: BASE_H + 12, class: 'lyric' }, bar.lyric);
+          // 歌詞太長時壓縮到小節寬度內
+          const est = [...bar.lyric].reduce((a, ch) => a + (ch.charCodeAt(0) > 255 ? 13 : 7), 0);
+          if (est > this.barW - 12) { ly.setAttribute('textLength', this.barW - 12); ly.setAttribute('lengthAdjust', 'spacingAndGlyphs'); }
+          svg.appendChild(ly);
+        }
         for (const sg of bar.segments) {
           const cx = this.beatX(b, sg.start) - 4;
           svg.appendChild(el('text', { x: cx, y: 25, class: 'chord-name' }, sg.chord.name));
@@ -133,8 +142,8 @@ export class TabView {
         const wrap = this.lines[li].wrap;
         const r = wrap.getBoundingClientRect();
         const vh = window.innerHeight;
-        if (r.top < 140 || r.bottom > vh - 150) {
-          window.scrollBy({ top: r.top - vh * 0.35, behavior: 'smooth' });
+        if (r.top < 120 || r.bottom > vh - 240) {
+          window.scrollBy({ top: r.top - 90, behavior: 'smooth' });
         }
       }
     }
