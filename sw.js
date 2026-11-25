@@ -1,8 +1,8 @@
 // 離線快取：網頁本身與內建曲庫可在沒有網路時使用
-const CACHE = 'fsp-v1';
+const CACHE = 'fsp-v2';
 const SHELL = [
   './', 'index.html', 'css/style.css', 'manifest.webmanifest', 'icons/icon.svg', 'icons/icon-192.png',
-  'js/app.js', 'js/arranger.js', 'js/audio.js', 'js/chords.js', 'js/render.js', 'js/songs.js', 'js/store.js', 'js/theory.js', 'js/ai.js',
+  'js/app.js', 'js/arranger.js', 'js/audio.js', 'js/chords.js', 'js/render.js', 'js/songs.js', 'js/store.js', 'js/theory.js', 'js/ai.js', 'js/lyrics.js',
 ];
 
 self.addEventListener('install', (e) => {

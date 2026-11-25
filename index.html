@@ -85,6 +85,7 @@
       <div class="song-head">
         <a class="btn ghost small" href="#/">← 我的歌曲</a>
         <div class="row-actions">
+          <button class="btn ghost small" id="btn-lyrics">歌詞</button>
           <button class="btn ghost small" id="btn-edit">編輯和弦</button>
           <button class="btn ghost small danger" id="btn-delete">刪除</button>
         </div>
@@ -267,6 +268,33 @@
         <button value="ok" class="btn primary" id="ed-save">產生指彈譜</button>
       </div>
     </form>
+  </dialog>
+
+  <!-- 歌詞搜尋與對齊 -->
+  <dialog id="dlg-lyrics" class="wide">
+    <div class="dlg">
+      <h2>歌詞</h2>
+      <div id="ly-step-search">
+        <form id="ly-search" class="search" autocomplete="off">
+          <input id="ly-q" type="search" placeholder="歌名 歌手" enterkeyhint="search" aria-label="搜尋歌詞">
+          <button type="submit" class="btn primary">搜尋歌詞</button>
+        </form>
+        <p class="hint">歌詞來自 LRCLIB 開放歌詞資料庫，只會存在這台裝置的瀏覽器裡。</p>
+        <div id="ly-status" class="status" role="status" aria-live="polite"></div>
+        <div id="ly-results" class="ly-results"></div>
+      </div>
+      <div id="ly-step-align" hidden>
+        <p class="hint">替每一句歌詞選擇從第幾小節開始（右邊會顯示那個小節的和弦，方便對照）。已依原曲時間先猜好位置，播放聽聽看再微調。</p>
+        <label class="ly-follow"><input type="checkbox" id="ly-follow" checked> 調整某一句時，後面的句子一起移動</label>
+        <div id="ly-lines" class="ly-lines"></div>
+      </div>
+      <div class="dlg-actions">
+        <button type="button" id="ly-clear" class="btn ghost danger">清除歌詞</button>
+        <button type="button" id="ly-back" class="btn ghost" hidden>重新搜尋</button>
+        <button type="button" id="ly-cancel" class="btn ghost">取消</button>
+        <button type="button" id="ly-save" class="btn primary" hidden>儲存</button>
+      </div>
+    </div>
   </dialog>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>

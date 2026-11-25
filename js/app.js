@@ -4,6 +4,7 @@ import { parseChord, noteToMidi } from './theory.js';
 import { Player } from './audio.js';
 import { TabView, Fretboard, chordDiagram } from './render.js';
 import * as store from './store.js';
+import { searchLyrics, lyricLines, guessBars, applyLyrics, fmtDuration } from './lyrics.js';
 
 const $ = (s) => document.querySelector(s);
 const player = new Player();
@@ -791,6 +792,9 @@ function openEditor(song, title) {
       return;
     }
     if (song) {
+      const oldLy = song.bars.map((b) => b.l || '').join('|');
+      const newLy = data.bars.map((b) => b.l || '').join('|');
+      if (oldLy !== newLy || song.bars.length !== data.bars.length) delete song.lyricLines;
       Object.assign(song, data);
       if (song.source === 'library') song.source = 'manual';
       store.saveSong(song);
@@ -803,6 +807,125 @@ function openEditor(song, title) {
     }
   };
 }
+
+// ---------------- 歌詞搜尋與對齊 ----------------
+let lyState = null; // { lines, bars }
+
+function lyShowStep(step) {
+  $('#ly-step-search').hidden = step !== 'search';
+  $('#ly-step-align').hidden = step !== 'align';
+  $('#ly-save').hidden = step !== 'align';
+  $('#ly-back').hidden = step !== 'align';
+}
+
+function openLyrics() {
+  if (!current) return;
+  const song = current.song;
+  $('#ly-q').value = `${song.title} ${song.artist || ''}`.trim();
+  $('#ly-status').textContent = '';
+  $('#ly-results').innerHTML = '';
+  $('#ly-clear').hidden = !song.bars.some((b) => b.l);
+  if (song.lyricLines && song.lyricLines.length) {
+    lyState = { lines: song.lyricLines.map((x) => ({ text: x.text, t: x.t ?? null })), bars: song.lyricLines.map((x) => x.bar || 0) };
+    renderLyAlign();
+    lyShowStep('align');
+  } else lyShowStep('search');
+  $('#dlg-lyrics').showModal();
+}
+
+function renderLyAlign() {
+  const arr = current.arr;
+  const n = arr.bars.length;
+  const chordsOf = (b) => (b >= 1 ? arr.bars[b - 1].segments.map((sg) => sg.chord.name).join(' ') || '—' : '');
+  const secOf = (b) => { for (let i = b - 1; i >= 0; i--) if (arr.bars[i].sec) return arr.bars[i].sec; return ''; };
+  const box = $('#ly-lines');
+  box.innerHTML = '';
+  lyState.lines.forEach((ln, i) => {
+    const row = document.createElement('div');
+    row.className = 'ly-row' + (lyState.bars[i] ? '' : ' off');
+    const sel = document.createElement('select');
+    sel.innerHTML = '<option value="0">不顯示</option>' + Array.from({ length: n }, (_, k) => `<option value="${k + 1}">第 ${k + 1} 小節</option>`).join('');
+    sel.value = String(lyState.bars[i]);
+    sel.addEventListener('change', () => {
+      const nv = +sel.value;
+      const delta = nv - lyState.bars[i];
+      lyState.bars[i] = nv;
+      if ($('#ly-follow').checked && nv && delta) {
+        for (let j = i + 1; j < lyState.bars.length; j++) {
+          if (!lyState.bars[j]) continue;
+          const v = lyState.bars[j] + delta;
+          lyState.bars[j] = v >= 1 && v <= n ? v : 0;
+        }
+      }
+      renderLyAlign();
+    });
+    const text = document.createElement('span');
+    text.className = 'ly-text';
+    text.textContent = ln.text;
+    const info = document.createElement('span');
+    info.className = 'ly-chord';
+    const b = lyState.bars[i];
+    info.textContent = b ? `${secOf(b) ? '[' + secOf(b) + '] ' : ''}和弦：${chordsOf(b)}` : '';
+    row.append(sel, text, info);
+    box.appendChild(row);
+  });
+}
+
+$('#ly-search').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const q = $('#ly-q').value.trim();
+  if (!q) return;
+  $('#ly-status').innerHTML = '<span class="spinner"></span>搜尋中…';
+  $('#ly-status').classList.remove('error');
+  $('#ly-results').innerHTML = '';
+  try {
+    const results = await searchLyrics(q);
+    if (!results.length) {
+      $('#ly-status').textContent = '找不到歌詞，試試只輸入歌名，或換成歌曲的原文名稱。';
+      return;
+    }
+    $('#ly-status').textContent = `找到 ${results.length} 筆，選一個版本：`;
+    for (const r of results) {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'ly-result';
+      btn.innerHTML = `<b>${esc(r.track)}</b> — ${esc(r.artist)}<small>${esc(r.album)}${r.duration ? ' · ' + fmtDuration(r.duration) : ''}${r.synced ? ' · 有時間軸' : ''} · ${esc((r.plain || '').split('\n').find((x) => x.trim()) || '')}</small>`;
+      btn.addEventListener('click', () => {
+        const lines = lyricLines(r);
+        if (!lines.length) { toast('這個版本沒有歌詞內容'); return; }
+        lyState = { lines, bars: guessBars(lines, current.song, current.arr.bars.length, current.arr.beatsPerBar) };
+        renderLyAlign();
+        lyShowStep('align');
+      });
+      $('#ly-results').appendChild(btn);
+    }
+  } catch (err) {
+    $('#ly-status').textContent = err.message;
+    $('#ly-status').classList.add('error');
+  }
+});
+
+$('#ly-back').addEventListener('click', () => lyShowStep('search'));
+$('#ly-cancel').addEventListener('click', () => $('#dlg-lyrics').close());
+$('#ly-save').addEventListener('click', () => {
+  const song = current.song;
+  applyLyrics(song, lyState.lines, lyState.bars);
+  store.saveSong(song);
+  $('#dlg-lyrics').close();
+  rebuild();
+  toast('歌詞已加入');
+});
+$('#ly-clear').addEventListener('click', () => {
+  if (!confirm('確定要清除這首歌的歌詞嗎？')) return;
+  const song = current.song;
+  song.bars.forEach((b) => { delete b.l; });
+  delete song.lyricLines;
+  store.saveSong(song);
+  $('#dlg-lyrics').close();
+  rebuild();
+  toast('已清除歌詞');
+});
+$('#btn-lyrics').addEventListener('click', openLyrics);
 
 $('#btn-edit').addEventListener('click', () => current && openEditor(current.song));
 $('#btn-delete').addEventListener('click', () => {
