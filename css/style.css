@@ -216,6 +216,7 @@ details.card[open] > summary::after { content: "▴"; }
 .sec-label { font-size: 11px; font-weight: 700; fill: var(--accent); }
 .chord-name { font-size: 13px; font-weight: 800; fill: var(--ink); }
 .beat-tick { stroke: var(--line); stroke-width: 1; }
+.tab-line > :not(.bar-hit) { pointer-events: none; }
 .bar-hit { fill: transparent; cursor: pointer; }
 .bar-hit:hover { fill: rgba(194, 89, 27, .06); }
 .bar-hit.in-loop { fill: rgba(194, 89, 27, .09); }
